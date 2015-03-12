@@ -11,6 +11,8 @@ def _csv_file_filter(f):
             continue
         yield ' '.join(row.split())
 
+from oddt import toolkit
+
 class pdbbind(object):
     def __init__(self,home, version = None, default_set = None, data_file = None, opt = {}):
         self.home = home
