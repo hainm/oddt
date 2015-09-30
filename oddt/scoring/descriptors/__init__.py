@@ -2,6 +2,7 @@ import numpy as np
 from scipy.spatial.distance import cdist as distance
 
 from oddt.docking import autodock_vina
+from oddt.docking.internal import vina_docking
 
 def atoms_by_type(atom_dict, types, mode = 'atomic_nums'):
     """Returns atom dictionaries based on given criteria. Currently we have 3 types of atom selection criteria:
@@ -215,6 +216,37 @@ class autodock_vina_descriptor(object):
             ### TODO: Check if ligand has vina scores
             scored_mol = self.vina.score(mol, single=True)[0].data
             vec = np.array(([scored_mol[key] for key in self.vina_scores]), dtype=float).reshape(1,-1)
+            if desc is None:
+                desc = vec
+            else:
+                desc = np.vstack((desc, vec))
+        return desc
+
+    def __reduce__(self):
+        return autodock_vina_descriptor, (None, self.vina_scores)
+
+class oddt_vina_descriptor(object):
+    def __init__(self, protein = None, vina_scores = ['vina_affinity', 'vina_gauss1', 'vina_gauss2', 'vina_repulsion', 'vina_hydrophobic', 'vina_hydrogen']):
+        self.protein = protein
+        self.vina = vina_docking(protein)
+        self.vina_scores = vina_scores
+
+    def set_protein(self, protein):
+        self.protein = protein
+        self.vina.set_protein(protein)
+
+    def build(self, ligands, protein = None, single = False):
+        if protein:
+            self.set_protein(protein)
+        else:
+            protein = self.protein
+        if ligands.__class__.__name__ == 'Molecule':
+            ligands = [ligands]
+        desc = None
+        for mol in ligands:
+            # Vina
+            self.vina.set_ligand(mol)
+            vec = np.hstack((self.vina.score(), self.vina.score_inter())).reshape(1,-1)
             if desc is None:
                 desc = vec
             else:
