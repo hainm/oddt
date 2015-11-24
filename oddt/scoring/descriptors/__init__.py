@@ -246,7 +246,9 @@ class oddt_vina_descriptor(object):
         for mol in ligands:
             # Vina
             self.vina.set_ligand(mol)
-            vec = np.hstack((self.vina.score(), self.vina.score_inter())).reshape(1,-1)
+            score = dict(zip(['vina_affinity', 'vina_gauss1', 'vina_gauss2', 'vina_repulsion', 'vina_hydrophobic', 'vina_hydrogen'], np.hstack((self.vina.score(), self.vina.score_inter())).flatten()))
+            mol.data.update(score)
+            vec = np.array([score[s] for s in self.vina_scores], dtype=np.float16)
             if desc is None:
                 desc = vec
             else:
